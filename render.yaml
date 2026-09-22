@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: namou-backend
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+
+    # Render's free tier has no persistent disk, so the container starts with an
+    # empty filesystem every time. Migrate and seed on boot; both are idempotent
+    # (the demo user upserts, the catalogue is skipped if products exist).
+    dockerCommand: sh -c "node dist/db/migrate.js && node dist/db/seed.js && node dist/server.js"
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # /tmp is writable and ephemeral, which matches what this plan offers.
+      # Orders placed here are lost when the service sleeps or redeploys.
+      - key: DATABASE_URL
+        value: /tmp/shop.db
+      - key: CORS_ORIGINS
+        value: https://namou-frontend.vercel.app
+      - key: SESSION_TTL_DAYS
+        value: "7"
+      # Demo credentials are intentionally public: demo@namou.shop / Demo@12345
+      - key: SEED_USER_EMAIL
+        value: demo@namou.shop
+      - key: SEED_USER_PASSWORD
+        value: Demo@12345

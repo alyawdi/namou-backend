@@ -3,7 +3,7 @@ import cors from 'cors';
 import express, { Router } from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
-import { env, isTest } from './config/env.js';
+import { env, isProduction, isTest } from './config/env.js';
 import { sqlite } from './db/client.js';
 import { logger } from './lib/logger.js';
 import { authenticate, requireAuth } from './middleware/auth.js';
@@ -17,8 +17,11 @@ import { wishlistRouter } from './modules/wishlist/wishlist.routes.js';
 export function createApp() {
   const app = express();
 
-  // Requests arrive through the Next.js proxy (or a load balancer) on the same host.
-  app.set('trust proxy', 'loopback');
+  // In production the platform's proxy (Fly) terminates TLS and forwards the
+  // client IP in X-Forwarded-For; trusting one hop keeps rate limiting per-user
+  // instead of bucketing everyone under the proxy's address. Locally, requests
+  // arrive through the Next.js rewrite on the same host.
+  app.set('trust proxy', isProduction ? 1 : 'loopback');
   app.disable('x-powered-by');
 
   app.use(helmet());

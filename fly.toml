@@ -1,0 +1,34 @@
+app = "namou-backend"
+primary_region = "fra"
+
+[build]
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+  # Lives on the mounted volume so orders survive redeploys.
+  DATABASE_URL = "/data/shop.db"
+
+# Persistent disk. Without this the SQLite file is wiped on every deploy.
+[[mounts]]
+  source = "namou_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # A volume binds the app to one machine, so no second instance can write
+  # to a different copy of the database.
+  min_machines_running = 0
+
+  [[http_service.http_checks]]
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
