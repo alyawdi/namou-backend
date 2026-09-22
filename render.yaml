@@ -8,9 +8,10 @@ services:
     healthCheckPath: /health
 
     # Render's free tier has no persistent disk, so the container starts with an
-    # empty filesystem every time. Migrate and seed on boot; both are idempotent
-    # (the demo user upserts, the catalogue is skipped if products exist).
-    dockerCommand: sh -c "node dist/db/migrate.js && node dist/db/seed.js && node dist/server.js"
+    # empty filesystem every time. start.sh migrates and seeds before serving;
+    # both are idempotent. It has to be a script rather than an inline
+    # `sh -c "a && b"`, which Render passes through as a single argv entry.
+    dockerCommand: /app/start.sh
 
     envVars:
       - key: NODE_ENV

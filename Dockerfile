@@ -21,10 +21,12 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/drizzle ./drizzle
 COPY package.json ./
+COPY start.sh ./
+RUN chmod +x start.sh
 
 USER node
 EXPOSE 8080
 
-# Migrations run at boot: Fly release commands don't mount the volume, so this
-# is the only place the database file is actually reachable.
-CMD ["sh", "-c", "node dist/db/migrate.js && node dist/server.js"]
+# Migrate and seed before serving. Fly release commands don't mount the volume,
+# so boot is the only point where the database file is actually reachable.
+CMD ["/app/start.sh"]
